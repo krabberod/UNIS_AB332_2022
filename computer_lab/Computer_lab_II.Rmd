@@ -1,0 +1,226 @@
+---
+title: ' Community ecology - Computer lab II - AB332'
+author: "Ramiro Logares (ICM), with additions by Anders K. Krabberød (UiO)"
+date: "October 2021"
+output: html_notebook
+---
+# Computer lab II
+
+First load the necessary packages.
+```{r,include=FALSE}
+library(vegan)
+library(tidyverse)
+library(compositions)
+library(zCompositions)
+library(PCAtools)
+library(mixOmics)
+library(ape)
+library(recluster)
+library(dendextend)
+```
+
+Now load the the data from the previous lab (change path to the file if necessary):
+```{r}
+load("AB332_lab_I.RData")
+```
+
+
+# Ordination and clustering
+
+## PCA
+Pca from the rarefied table
+```{r}
+otu.tab.simple.ss.nozero.pca <- PCAtools::pca(t(otu.tab.simple.ss.nozero), scale = FALSE) # Runs de PCA
+
+biplot(otu.tab.simple.ss.nozero.pca, showLoadings = T, lab = rownames(otu.tab.simple.ss.nozero)) # Plots de PCA
+screeplot(otu.tab.simple.ss.nozero.pca, axisLabSize = 18, titleLabSize = 22) # We plot the percentage of variance explained by each axis
+```
+
+PCA on the clr table
+```{r}
+otu.tab.simple.gbm.clr.pca <- mixOmics::pca(otu.tab.simple.gbm.clr, scale = FALSE, ncomp = 6) # NB: the pca used here is from "mixOmics" while the pca above is from "PCAtools"
+plotVar(otu.tab.simple.gbm.clr.pca)
+plot(otu.tab.simple.gbm.clr.pca)
+```
+
+## PCoA
+
+PCoA not included in Vegan, so we use the APE package
+Calculates the PCoA of the rarefied table using Bray Curtis distances
+
+```{r}
+otu.tab.simple.ss.nozero.bray.pcoa <- pcoa(otu.tab.simple.ss.nozero.bray) # Calculates PCoA
+barplot(otu.tab.simple.ss.nozero.bray.pcoa$values$Relative_eig[1:10]) # Plot Eigenvalues (amount of variance explained by Axes)
+biplot.pcoa(otu.tab.simple.ss.nozero.bray.pcoa)
+```
+
+Calculates the PCoA of the clr table using Euclidean distances
+```{r}
+otu.tab.simple.gbm.clr.euclidean.pcoa <- pcoa(otu.tab.simple.gbm.clr.euclidean) # Calculates PCoA
+barplot(otu.tab.simple.gbm.clr.euclidean.pcoa$values$Relative_eig[1:10]) # Plot Eigenvalues (amount of variance explained by Axes)
+biplot.pcoa(otu.tab.simple.gbm.clr.euclidean.pcoa)
+```
+## NMDS
+We will define the function NMDS.scree() that automatically performs a NMDS for 1-7 dimensions and plots the number of dimensions vs. stress
+
+
+```{r}
+
+set.seed(666) # Set a seed to make results reproducible
+NMDS.scree <- function(x) { # x is the name of the distance matrix
+  plot(rep(1, 7), replicate(7, metaMDS(x, autotransform = FALSE, k = 1)$stress), xlim = c(1, 7), ylim = c(0, 0.30), xlab = "# of Dimensions", ylab = "Stress", main = "NMDS stress plot")
+  for (i in 1:7) {
+    points(rep(i + 1, 7), replicate(7, metaMDS(x, autotransform = FALSE, k = i + 1)$stress))
+  }
+}
+```
+
+Using the function to determine the optimal number of dimensions
+Using the rarefied table
+```{#r,include=FALSE}
+NMDS.scree(otu.tab.simple.ss.nozero.bray)
+```
+
+Using the clr table
+```{#r}
+NMDS.scree(otu.tab.simple.gbm.clr.euclidean)
+```
+
+We calculate NMDS for k(dimensions)=2
+Rarefied table (we use the dataframe to have access to sample and OTU names)
+```{r}
+otu.tab.simple.ss.nozero.bray.nmds <- metaMDS(otu.tab.simple.ss.nozero, k = 2, trymax = 100, trace = FALSE, autotransform = FALSE, distance = "bray")
+otu.tab.simple.ss.nozero.bray.nmds
+```
+
+
+```{r}
+stressplot(otu.tab.simple.ss.nozero.bray.nmds) # Make stressplot
+```
+
+clr table (we use the dataframe to have access to sample and OTU names)
+```{r}
+otu.tab.simple.gbm.clr.euclidean.nmds <- metaMDS(t(as.data.frame(otu.tab.simple.gbm.clr)), k = 2, trymax = 100, trace = FALSE, autotransform = FALSE, distance = "euclidean")
+otu.tab.simple.gbm.clr.euclidean.nmds
+```
+
+
+```{r}
+stressplot(otu.tab.simple.gbm.clr.euclidean.nmds) # Make stressplot
+```
+
+Simple plotting
+Rarefied table
+```{r}
+plot(otu.tab.simple.ss.nozero.bray.nmds, display = "sites", type = "n")
+points(otu.tab.simple.ss.nozero.bray.nmds, display = "sites", col = "red", pch = 19)
+text(otu.tab.simple.ss.nozero.bray.nmds, display = "sites")
+```
+
+clr table
+```{r}
+
+plot(otu.tab.simple.gbm.clr.euclidean.nmds, display = "sites", type = "n")
+points(otu.tab.simple.gbm.clr.euclidean.nmds, display = "sites", col = "red", pch = 19)
+text(otu.tab.simple.gbm.clr.euclidean.nmds, display = "sites")
+```
+### Let's make nicer plots
+We get the seasons for samples
+
+```{r}
+isa.metadata <- read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2021/main/computer_lab/data/AB332metadata_v3.txt")
+isa.metadata <- column_to_rownames(isa.metadata, var = "Sample_Name")
+isa.metadata.simp <- isa.metadata[6:30, ]
+```
+
+Rarefied table
+We generate a table of nmds scores and other features
+
+```{r}
+otu.tab.simple.ss.nozero.bray.nmds.scores <- as.data.frame(scores(otu.tab.simple.ss.nozero.bray.nmds))
+otu.tab.simple.ss.nozero.bray.nmds.scores$season <- isa.metadata.simp$seasons
+otu.tab.simple.ss.nozero.bray.nmds.scores$month <- as.factor(isa.metadata.simp$month)
+otu.tab.simple.ss.nozero.bray.nmds.scores$samples <- rownames(otu.tab.simple.ss.nozero.bray.nmds.scores)
+```
+
+Create the plot
+```{r}
+ggplot(otu.tab.simple.ss.nozero.bray.nmds.scores) +
+  geom_point(mapping = aes(x = NMDS1, y = NMDS2, colour = season), size = 3) +
+  coord_fixed() + ## need aspect ratio of 1!
+  geom_text_repel(
+    box.padding = 0.5, aes(x = NMDS1, y = NMDS2, label = samples),
+    size = 3
+  )
+```
+
+clr table
+We generate a table of nmds scores and other features
+```{r}
+otu.tab.simple.gbm.clr.euclidean.nmds.scores <- as.data.frame(scores(otu.tab.simple.gbm.clr.euclidean.nmds))
+otu.tab.simple.gbm.clr.euclidean.nmds.scores$season <- isa.metadata.simp$seasons
+otu.tab.simple.gbm.clr.euclidean.nmds.scores$month <- as.factor(isa.metadata.simp$month)
+otu.tab.simple.gbm.clr.euclidean.nmds.scores$samples <- rownames(otu.tab.simple.gbm.clr.euclidean.nmds.scores)
+otu.tab.simple.gbm.clr.euclidean.nmds.scores
+```
+
+
+```{r}
+ggplot(otu.tab.simple.gbm.clr.euclidean.nmds.scores) +
+  geom_point(mapping = aes(x = NMDS1, y = NMDS2, colour = month), size = 3) +
+  coord_fixed() + ## need aspect ratio of 1!
+  geom_text_repel(
+    box.padding = 0.5, aes(x = NMDS1, y = NMDS2, label = samples),
+    size = 3
+  )
+```
+
+
+#Clustering of samples
+
+Allows determining the similarity between samples as well as the organization of samples in groups.
+Hierarchical clustering: samples will be organized in ranks according to their similarity and all samples will be included in a large group Unweighted Pair-Group Method Using Arithmetic Averages (UPGMA): This linkage method will link samples by considering their distance to a subgroup arithmetic average. This is a method widely used in ecology
+
+### UPGMA
+Rarefied dataset
+We generate 100 trees by re-sampling and then, we plot the consensus tree
+```{r}
+otu.tab.simple.ss.nozero.bray.upgma <- recluster.cons(otu.tab.simple.ss.nozero.bray, tr = 100, p = 0.5, method = "average")
+plot(otu.tab.simple.ss.nozero.bray.upgma$cons) # plot consensus tree
+```
+
+We'll calculate bootstrap support values (0: bad - 100: perfect)
+This allows us to know how well supported is the branching pattern
+```{r}
+otu.tab.simple.ss.nozero.bray.upgma.boot <- recluster.boot(otu.tab.simple.ss.nozero.bray.upgma$cons, otu.tab.simple.ss.nozero, tr = 100, p = 0.5, method = "average", boot = 1000, level = 1)
+recluster.plot(otu.tab.simple.ss.nozero.bray.upgma$cons, otu.tab.simple.ss.nozero.bray.upgma.boot) # We add bootstrap values to the branching pattern
+```
+clr transformed dataset
+We generate 100 trees by resampling and then, we build the consensus
+
+```{r}
+otu.tab.simple.gbm.clr.euclidean.upgma <- recluster.cons(otu.tab.simple.gbm.clr.euclidean, tr = 100, p = 0.5, method = "average")
+plot(otu.tab.simple.gbm.clr.euclidean.upgma$cons) # plot consensus tree
+```
+ We'll calculate bootstrap support values (0: bad - 100: perfect)
+
+```{r}
+otu.tab.simple.gbm.clr.euclidean.upgma.boot <- recluster.boot(otu.tab.simple.gbm.clr.euclidean.upgma$cons, t(otu.tab.simple.gbm.clr), tr = 100, p = 0.5, method = "average", boot = 100, level = 1)
+
+recluster.plot(otu.tab.simple.gbm.clr.euclidean.upgma$cons, otu.tab.simple.gbm.clr.euclidean.upgma.boot) # We add bootstrap values to the branching pattern
+```
+Let's compare both dendrograms using tanglegrams
+
+
+```{r}
+
+dendlist(as.dendrogram(otu.tab.simple.ss.nozero.bray.upgma$cons), as.dendrogram(otu.tab.simple.gbm.clr.euclidean.upgma$cons)) %>%
+  untangle(method = "step1side") %>% # Find the best alignment layout
+  tanglegram(cex_main = 0.7, cex_sub = 1, lwd = 2.0, main_left = "rarefied", main_right = "clr transformed", cex_main_left = 2, lab.cex = 1.5, edge.lwd = 2)
+```
+
+
+
+```{r}
+save.image("AB332_lab_II.RData")
+```

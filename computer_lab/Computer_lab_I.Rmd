@@ -1,0 +1,284 @@
+---
+title: 'Community ecology - Computer lab I - AB332'
+author: "Ramiro Logares (ICM), with additions by Anders K. Krabberød (UiO)"
+date: "October 2021"
+output: html_notebook
+---
+
+>This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+>Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+>
+>Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+>
+>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+>
+>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+It's time for you to try and do the same analysis as was shown in the lecture but using a different dataset:
+Make sure you have installed all packages!
+
+### Load Packages
+```{r,include=FALSE}
+library(vegan)
+library(tidyverse)
+library(compositions)
+library(zCompositions)
+```
+
+# Starting community ecology analyses
+
+Read the data from the github page:
+```{r}
+otu.tab <- read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2021/main/computer_lab/data/AB332_otutab_reduc3.txt")
+```
+
+First, get to know the data: How many samples and how many OTUs are in the dataset? What do the numbers in the sample names mean?
+```{r}
+head(otu.tab)
+dim(otu.tab)
+```
+
+You can look at a given selection of the table by specifying a range of rows and columns:
+```{r}
+otu.tab[5:15, 1:5] # The first 10 rows, and the first 5 columns
+```
+
+You can also see the entire table with the `View()` function:
+```{#r}
+View(otu.tab)
+```
+
+See if you can choose a different subset. For instance samples 6-12 and OTUs 20-26:
+```{r}
+
+```
+
+We assign OTU-numbers as rownames
+```{r}
+otu.tab <- column_to_rownames(otu.tab, var = "OTUNumber")
+```
+
+Let's check the names
+```{r}
+head(rownames(otu.tab))
+dim(otu.tab)
+```
+
+For simplicity, I have included only the 25 samples in the rest of the tutorial. As an exercise, you should redo the analysis with the full dataset. I.e. remove the part of the code that selects samples 1:15 in the following chunk. (This way your numbers will differ from the pdf, and you can also see the effect of a different dataset).
+```{r}
+otu.tab.red <- otu.tab[, 6:30]
+```
+
+The data needs to be transposed since this is how Vegan likes it.
+```{r}
+otu.tab.simple <- t(otu.tab.red)
+otu.tab.simple[1:5, 1:5]
+```
+
+You can get the total number of reads for each sample using rowSums(), and the total reads per OTU with colSums().
+```{r}
+rowSums(otu.tab.simple)
+head(colSums(otu.tab.simple)) # Too many to show them all.
+```
+
+Since I have selected only a few of the samples is possible that some of the OTU's are left with a total abundance of zero. In R it is possible to have functions within functions so the following will print the number of columns in the data set that has a sum equal to 0:
+```{r}
+length(which(colSums(otu.tab.simple) == 0))
+```
+
+We can use the same idea of a function within a function to exclude the OTUs with a total number of 0.
+```{r}
+otu.tab.simple <- otu.tab.simple[, -(which(colSums(otu.tab.simple) == 0))]
+```
+
+Now how many are 0?
+```{r}
+length(which(colSums(otu.tab.simple) == 0))
+```
+
+How many have more than 0 reads?
+```{r}
+length(which(colSums(otu.tab.simple) > 0))
+```
+
+Can you find how many OTU's that have more than 10 reads (in total)?
+```{r}
+
+```
+
+## Common metrics and methods
+
+The following calculations make use of functions in the vegan package written by Jari Oksanen.  
+*Vegan is an R package for community ecologists. It contains the most popular methods of multivariate analysis needed in analysing ecological communities, and tools for diversity analysis, and other potentially useful functions*. If you want to learn more about the vegan you can run ```browseVignettes("vegan")```
+
+### Richness estimations
+```{r}
+richness <- estimateR(otu.tab.simple)
+richness
+```
+Above we have the estimators Chao and ACE as well as the species number. What do the numbers mean?
+
+### Rarefaction
+
+Let's calculate the number of reads per sample.
+```{r}
+rowSums(otu.tab.simple)
+rarecurve(otu.tab.simple, step = 100, xlab = "Number of reads", ylab = "Richness", col = "blue")
+```
+How do you interpret these curves? Which samples have the lowest number of total reads? Which are the highest?
+
+### Accumulation curves
+```{r}
+accum.curve <- specaccum(otu.tab.simple, method = "collector")
+plot(accum.curve)
+```
+What does this curve represent? How do you interpret it?
+
+### Evenness
+```{r}
+plot(colSums(otu.tab.simple), log = "y", xlab = "Rank", ylab = "Abundance", pch = 19, cex = 0.5, col = "blue")
+```
+
+### Fitting rank-abundance distribution models to the data
+```{r}
+mod <- radfit(otu.tab.simple)
+plot(mod)
+```
+
+
+```{r}
+mod.all <- radfit(colSums(otu.tab.simple))
+plot(mod.all)
+```
+
+### Fitting data to the Preston model
+```{r}
+preston <- prestonfit(colSums(otu.tab.simple))
+preston.dist <- prestondistr(colSums(otu.tab.simple))
+plot(preston)
+lines(preston.dist, line.col = "blue3")
+```
+
+### Extrapolated richness
+```{r}
+veiledspec(preston)
+veiledspec(preston.dist)
+```
+
+### Shannon H index (considers richness and evenness)
+```{r}
+H <- diversity(otu.tab.simple, index = "shannon")
+H
+plot(H, type = "l", col = "blue")
+```
+
+### Pielou's index of evenness (range 0-1, 1 = maximum evenness)
+
+`J=H/Hmax`  
+`J=Shannon (H) / log(S=species richness)`
+```{r}
+J <- H / log(rowSums(otu.tab.simple > 0))
+```
+
+### Inverse Simpson's D index (richness+evenness. Larger values, larger diversity)
+```{r}
+inv.simpson <- diversity(otu.tab.simple, "invsimpson")
+plot(inv.simpson, type = "l", col = "blue")
+```
+
+# Beta diversity
+
+We rarefy all samples to the same sequencing depth, to reduce biases.
+```{r}
+min(rowSums(otu.tab.simple)) # We calculate the sample with the minimum amount of reads
+
+otu.tab.simple.ss <- rrarefy(otu.tab.simple, min(rowSums(otu.tab.simple))) # Samples are rarefied to lowest number of reads
+rowSums(otu.tab.simple.ss)
+```
+What is the number of reads these samples have been rarified to? What does it imply, do you understand how it is done?
+
+Check that the number of OTUs are the same in the new table
+```{r}
+dim(otu.tab.simple)
+dim(otu.tab.simple.ss)
+```
+
+The tables have the same size, but, after removing reads, several OTUs might be left with zero read abundance.
+```{r}
+length(which(colSums(otu.tab.simple) == 0))
+length(which(colSums(otu.tab.simple.ss) == 0))
+head(which(colSums(otu.tab.simple.ss) == 0)) # Show the OTUs and the position in the table that have 0 abundance for the first OTUs
+```
+
+We can compare the number of reads for one of the OTUs:
+```{r}
+colnames(otu.tab.simple)[13]
+otu.tab.simple[, 13] # This gives the abundance of the OTU1009  across the different samples in the table that is NOT subsampled
+otu.tab.simple.ss[, 13] # # This gives the abundance of the OTU1009  across the different samples in the table that IS subsampled
+```
+
+We can remove the OTUs with zero abundance with a similar command as we used at the beginning of the lab:
+```{r}
+otu.tab.simple.ss.nozero <- otu.tab.simple.ss[, -(which(colSums(otu.tab.simple.ss) == 0))] # Removes OTUs with zero abundance
+length(which(colSums(otu.tab.simple.ss.nozero) == 0)) # Check that no zero abundance OTUs are left
+```
+
+Let's check dimensions of the tables:
+```{r}
+dim(otu.tab.simple.ss)
+dim(otu.tab.simple.ss.nozero)
+```
+
+2548-2226 = 322 , This is the number of OTUs that we expected to be removed.
+
+## Compositional data analyses
+
+Replace zeros (problems with log calculations) with pseudo-counts
+```{r}
+otu.tab.simple.gbm <- cmultRepl(t(otu.tab.simple), output = "p-counts")
+otu.tab.simple.gbm[1:5, 1:5] # We have a look to the replaced values
+```
+
+### centered log-ratio (clr) transformation
+
+```{r}
+otu.tab.simple.gbm.clr <- clr(otu.tab.simple.gbm) # We apply a centered log-ratio (clr) transformation
+otu.tab.simple.gbm.clr[1:5, 1:5] # Values now look different than counts.
+```
+## Distance metrics
+
+First calculate the Bray Curtis dissimilarities for the rarefied dataset
+```{r}
+otu.tab.simple.ss.nozero.bray <- vegdist(otu.tab.simple.ss.nozero, method = "bray")
+as.matrix(otu.tab.simple.ss.nozero.bray)[1:5, 1:5]
+```
+
+Then calculate the Euclidean distance based on the clr data (also known as Aitchison distance)
+```{r}
+otu.tab.simple.gbm.clr.euclidean <- dist(t(otu.tab.simple.gbm.clr), method = "euclidean")
+as.matrix(otu.tab.simple.gbm.clr.euclidean)[1:5, 1:5]
+```
+
+Let's compare the distance matrices:
+```{r}
+identical(rownames(as.matrix(otu.tab.simple.ss.nozero.bray)), rownames(as.matrix(otu.tab.simple.gbm.clr.euclidean)))
+```
+
+Generate a simple x-y plot, and fit the linear model (i.e. the regression)
+```{r}
+plot(otu.tab.simple.ss.nozero.bray, otu.tab.simple.gbm.clr.euclidean, pch = 19, xlab = "Bray Curtis", ylab = "Aitchison")
+# lm<-lm(otu.tab.simple.gbm.clr.euclidean~otu.tab.simple.ss.nozero.bray)
+# abline(lm, col="red")
+```
+
+The correlation between distance matrices is tested with a Mantel test.
+```{r}
+mantel(otu.tab.simple.ss.nozero.bray, otu.tab.simple.gbm.clr.euclidean)
+```
+
+*Phew* That was Part I. Now before you have a break save the data so it can be loaded if you want to use some of the same data.
+
+```{#r}
+save.image("AB332_lab_I.RData")
+```
