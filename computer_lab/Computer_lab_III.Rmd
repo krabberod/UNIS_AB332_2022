@@ -1,7 +1,7 @@
 ---
 title: 'Community ecology - Computer lab III - AB332'
-author: "Ramiro Logares (ICM), with additions by Anders K. Krabberød (UiO)"
-date: "October 2021"
+author: "Ramiro Logares (ICM) and Anders K. Krabberød (UiO)"
+date: "October 2022"
 output: html_notebook
 ---
 
@@ -35,7 +35,7 @@ load("AB332_lab_II.RData")
 The aim is to investigate how the environmental variation may explain community variance.  
 **Read table with environmental data**:
 ```{r}
-isa.metadata<-read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2021/main/computer_lab/data/AB332metadata_v3.txt")
+isa.metadata<-read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332metadata_v3.txt")
 isa.metadata
 isa.metadata <- column_to_rownames(isa.metadata, var = "Sample_Name")
 ```
@@ -52,7 +52,7 @@ isa.metadata.simp
 ```
 Check that the samples are correct, i.e. that the same names are in the OTU-table and the metadata:
 ```{r}
-identical(colnames(otu.tab.simple.gbm.clr),rownames(isa.metadata.simp))
+identical(colnames(otu.tab.red),rownames(isa.metadata.simp))
 ```
 
 
@@ -103,8 +103,10 @@ First we fit the varibles to the OTU-table that was rarified:
 **Rarefied table**
 ```{r}
 
-otu.tab.simple.ss.nozero.bray.nmds.envfit<-envfit(otu.tab.simple.ss.nozero.bray.nmds,as.data.frame(isa.metadata.cont.zscores), permu=999,na.rm=T)
-otu.tab.simple.ss.nozero.bray.nmds.envfit
+otu.tab.trans.ss.nozero.bray.nmds.envfit <- envfit(otu.tab.trans.ss.nozero.bray.nmds, 
+                                            as.data.frame(isa.metadata.cont.zscores), 
+                                            permu=999, na.rm=T, display ="sites")
+otu.tab.trans.ss.nozero.bray.nmds.envfit
 
 ```
 
@@ -116,34 +118,15 @@ We plot the vectors of the significant correlations
 
 
 ```{r}
-plot(otu.tab.simple.ss.nozero.bray.nmds, type="t", display="sites") # plot the samples
-plot(otu.tab.simple.ss.nozero.bray.nmds.envfit) # plot all environmental vectors
+plot(otu.tab.trans.ss.nozero.bray.nmds, type="t", display="sites") # plot the samples
+plot(otu.tab.trans.ss.nozero.bray.nmds.envfit) # plot all environmental vectors
 ```
 The plotting only the vectors with p<0.01.
 ```{r}
-plot(otu.tab.simple.ss.nozero.bray.nmds, type="t", display="sites") # plot the samples
-plot(otu.tab.simple.ss.nozero.bray.nmds.envfit, p.max=0.01)
+plot(otu.tab.trans.ss.nozero.bray.nmds, type="t", display="sites") # plot the samples
+plot(otu.tab.trans.ss.nozero.bray.nmds.envfit, p.max=0.01)
 ```
 Can you see any difference?  
-
-Now we do the same with the log-ratio transformed data:   
-**clr table**
-
-```{r}
-otu.tab.simple.gbm.clr.euclidean.nmds.envfit<-envfit(otu.tab.simple.gbm.clr.euclidean.nmds,as.data.frame(isa.metadata.cont.zscores), permu=999, na.rm=T)
-otu.tab.simple.gbm.clr.euclidean.nmds.envfit
-```
-
-
-```{r}
-plot(otu.tab.simple.gbm.clr.euclidean.nmds, type="t", display="sites")
-plot(otu.tab.simple.gbm.clr.euclidean.nmds.envfit) # We plot all vectors
-```
-Now as an exercise make the plot with only the vectors that have p<0.01
-```{r}
-
-```
-
 
 
 ## Constrained Ordination
@@ -153,13 +136,13 @@ Selection of the most important (i.e. signficant) variables for dbRDA is done by
 Lets use the **Rarefaction table** first:
 Start with a model containing only species matrix and intercept:
 ```{r}
-mod0.rarefaction<-capscale(otu.tab.simple.ss.nozero.bray~1, as.data.frame(isa.metadata.cont.zscores))
+mod0.rarefaction<-capscale(otu.tab.trans.ss.nozero.bray ~ 1, as.data.frame(isa.metadata.cont.zscores))
 mod0.rarefaction
 ```
 
 Now make a model including all variables from env matrix (the dot after tilde (~) means ALL!)
 ```{r}
-mod1.rarefaction<-capscale(otu.tab.simple.ss.nozero.bray~ ., as.data.frame(isa.metadata.cont.zscores))
+mod1.rarefaction<-capscale(otu.tab.trans.ss.nozero.bray ~ ., as.data.frame(isa.metadata.cont.zscores))
 mod1.rarefaction
 ```
 > NB here you might get an error if you have missing values. Missing vaules can be dealt with in different ways depending on the situation. Sometimes it is easiest to drop the sample, sometimes you can imput the values of the missing data. The default in the capscale (na.fail) is to stop with missing values. Choices na.omit and na.exclude delete rows with missing values, but differ in representation of results. With na.omit only non-missing site scores are shown, but na.exclude gives NA for scores of missing observations.
@@ -169,25 +152,14 @@ Finally do the stepwise selection of variables:
 ordistep(mod0.rarefaction, scope = formula(mod1.rarefaction), perm.max = 1000, direction="forward")
 ```
 *Can you see which variables were selected?*  
-When doing a stepwise building of models you can this either "forward" (as in the example), "backwards", or "both". Try differnet methods and see if the endresult is any different.
-
-
-Here is the same stepwise selection for the **clr** data. Can you see any difference from the previous result?
-```{r}
-#clr table
-mod0.clr<-capscale(otu.tab.simple.gbm.clr.euclidean~1, as.data.frame(isa.metadata.cont.zscores)) # model containing only species matrix and intercept
-mod1.clr<-capscale(otu.tab.simple.gbm.clr.euclidean~ ., as.data.frame(isa.metadata.cont.zscores)) # # model including all variables from env matrix (the dot after tilde (~) means ALL!)
-ordistep(mod0.clr, scope = formula(mod1.clr), perm.max = 1000, direction="forward")
-
-```
-
+When doing a stepwise building of models you can this either "forward" (as in the example), "backwards", or "both". Try different methods and see if the end result is any different.
 
 
 ## Plot the ordination
 In the following sections we will use `ggord` for more control of the ordination plot. ggord is a packages that makes use of ggplot2. It can take many different parameters. See `?ggord` for details.
 **rarefied table**
 ```{r}
-isa.rarified.db <- dbrda(formula = otu.tab.simple.ss.nozero.bray ~ silicate+temp_25+sal_25+F_25+phosphate, data = as.data.frame(isa.metadata.cont.zscores))
+isa.rarified.db <- dbrda(formula = otu.tab.trans.ss.nozero.bray ~ silicate+temp_25+sal_25+F_25+phosphate, data = as.data.frame(isa.metadata.cont.zscores))
 
 stats::screeplot(isa.rarified.db)
 ggord(isa.rarified.db)
@@ -195,34 +167,27 @@ ggord(isa.rarified.db)
 The plot wasn't very pretty. Specifying limits to the plot might help:
 
 ```{r}
-isa.rarified.db <- dbrda(formula = otu.tab.simple.ss.nozero.bray ~ silicate+temp_25+sal_25+F_25+phosphate, data = as.data.frame(isa.metadata.cont.zscores))
+isa.rarified.db <- dbrda(formula = otu.tab.trans.ss.nozero.bray ~ silicate+temp_25+sal_25+F_25+phosphate, data = as.data.frame(isa.metadata.cont.zscores))
 
 stats::screeplot(isa.rarified.db)
 ggord(isa.rarified.db,xlims=c(-1.3,1.3), ylims=c(-1.5,1))
 ```
 
-**clr table**
-```{r}
-
-(isa.clr.dbrda<-dbrda(formula = otu.tab.simple.gbm.clr.euclidean ~ silicate+temp_25+sal_25+F_25+phosphate, data = as.data.frame(isa.metadata.cont.zscores)))
-stats::screeplot(isa.clr.dbrda)
-ggord(isa.clr.dbrda,xlims=c(-1.3,1.3), ylims=c(-1.5,1.5))
-```
 
 Ggord can take several parameters, for instance the seasons from the metadata:
 
 ```{r}
-ggord(isa.clr.dbrda, isa.metadata.simp$seasons)
+ggord(isa.rarified.db, isa.metadata.simp$seasons)
 ```
 *See if you can modify the plot and make the text visible!*  
 Or the months:
 
 ```{r}
-ggord(isa.clr.dbrda, as.factor(isa.metadata.simp$month))
+ggord(isa.rarified.db, as.factor(isa.metadata.simp$month))
 ```
 And you can specify the limits of the axes if the plot does not look nice:  
 ```{r}
-ggord(isa.clr.dbrda, grp_in=as.factor(isa.metadata.simp$month), xlims=c(-1.3,1.3), ylims=c(-1.5,1.5))
+ggord(isa.rarified.db, grp_in=as.factor(isa.metadata.simp$month), xlims=c(-1.3,1.3), ylims=c(-1.5,1.5))
 
 ```
 
@@ -231,14 +196,14 @@ ggord(isa.clr.dbrda, grp_in=as.factor(isa.metadata.simp$month), xlims=c(-1.3,1.3
 Selection of the most important variables
 **rarefaction table**
 ```{r}
-mod0.cca.rarefaction<-cca(otu.tab.simple.ss.nozero~1, as.data.frame(isa.metadata.cont.zscores)) # model containing only species matrix and intercept
-mod1.cca.rarefaction<-cca(otu.tab.simple.ss.nozero~ ., as.data.frame(isa.metadata.cont.zscores)) # # model including all variables from env matrix (the dot after tilde (~) means ALL!)
+mod0.cca.rarefaction<-cca(otu.tab.trans.ss.nozero ~ 1, as.data.frame(isa.metadata.cont.zscores)) # model containing only species matrix and intercept
+mod1.cca.rarefaction<-cca(otu.tab.trans.ss.nozero ~ ., as.data.frame(isa.metadata.cont.zscores)) # # model including all variables from env matrix (the dot after tilde (~) means ALL!)
 ordistep(mod0.cca.rarefaction, scope = formula(mod1.cca.rarefaction), perm.max = 1000, direction="forward")
 ```
 
 Replace the variables in the formula below with the significant variables from the selection procedure.
 ```{r}
-isa.clr.cca<-cca(formula = otu.tab.simple.ss.nozero ~ chla_GFF+ silicate+ N_P, data = as.data.frame(isa.metadata.cont.zscores))
+isa.clr.cca<-cca(formula = otu.tab.trans.ss.nozero ~ chla_GFF+ silicate+ N_P, data = as.data.frame(isa.metadata.cont.zscores))
 
 stats::screeplot(isa.clr.cca)
 ```
@@ -260,12 +225,6 @@ adonis(otu.tab.simple.ss.nozero~ silicate+temp_25+sal_25+F_25+phosphate,
 ```
 
 
-**clr-transformed table**
-```{r}
-adonis(as.data.frame(t(otu.tab.simple.gbm.clr))~silicate+temp_25+sal_25+F_25+phosphate,
-       data = as.data.frame(isa.metadata.cont.zscores),
-       method="euclidean", permutations=9999)
-```
 Finally save!
 ```{#r}
 save.image("AB332_lab_III.RData")
