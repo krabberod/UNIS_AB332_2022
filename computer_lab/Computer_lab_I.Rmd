@@ -1,6 +1,6 @@
 ---
 title: "Community ecology - Computer lab I - AB332"
-author: "Ramiro Logares (ICM) and by Anders K. Krabberød (UiO)"
+author: "Ramiro Logares (ICM) and Anders K. Krabberød (UiO)"
 date: "October 2022"
 output:
   html_document:
