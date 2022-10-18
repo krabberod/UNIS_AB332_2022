@@ -40,5 +40,5 @@ vignettes/*.pdf
 
 # Powerpoint files
 # Lectures/*.pptx
-# *.pptx
-# *.key
+*.pptx
+*.key
