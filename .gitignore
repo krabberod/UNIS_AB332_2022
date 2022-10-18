@@ -39,5 +39,6 @@ vignettes/*.pdf
 .Renviron
 
 # Powerpoint files
-*.pptx
-Lectures/*.pptx
+# Lectures/*.pptx
+# *.pptx
+# *.key
