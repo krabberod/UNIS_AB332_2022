@@ -13,11 +13,11 @@ The R-scripts for the Computer lab are [here](computer_lab/).
 | **Monday**    | 09:00-11:00 | Introduction to NGS                         | Cheshtaa Chitkara        |
 |               |             |                                             |                          |
 | **Tuesday**   | 09:15-10:00 | [Introduction to R](Introduction_to_R)      | Anders K. Krabberød      |
-|               | 10:15-12:00 | [Community ecology I]                       | Ramiro Logares (digital) |
+|               | 10:15-12:00 | Community ecology I                         | Ramiro Logares (digital) |
 |               | 12:00-12:45 | _Lunch break_                               |                          |
 |               |             |                                             |                          |
 | **Wednesday** | 09:15-10:00 | [Computer lab I](computer_lab/)             | Anders K. Krabberød      |
-|               | 10:15-12:00 | [ Community ecology II ]                    | Ramiro Logares (digital) |
+|               | 10:15-12:00 | Community ecology II                        | Ramiro Logares (digital) |
 |               | 12:00-13:00 | _Lunch break_                               |                          |
 |               | 13:00-16:00 | [Computer lab I (continued)](computer_lab/) | Anders K. Krabberød      |
 |               |             |                                             |                          |
