@@ -25,8 +25,6 @@ Make sure you have installed all packages!
 ```{r,include=FALSE}
 library(vegan)
 library(tidyverse)
-library(compositions)
-library(zCompositions)
 ```
 
 

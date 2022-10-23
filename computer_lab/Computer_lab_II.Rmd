@@ -12,8 +12,6 @@ First load the necessary packages.
 ```{r,include=FALSE}
 library(vegan)
 library(tidyverse)
-library(compositions)
-library(zCompositions)
 library(PCAtools)
 library(mixOmics)
 library(ape)
@@ -56,7 +54,7 @@ NMDS.scree <- function(x) { # x is the name of the distance matrix
 Using the function to determine the optimal number of dimensions
 Using the rarefied table
 ```{r,include=FALSE}
-# NMDS.scree(otu.tab.trans.ss.nozero.bray)
+ NMDS.scree(otu.tab.trans.ss.nozero.bray)
 ```
 
 
@@ -73,11 +71,6 @@ otu.tab.trans.ss.nozero.bray.nmds
 stressplot(otu.tab.trans.ss.nozero.bray.nmds) 
 ```
 
-
-```{r}
-stressplot(otu.tab.simple.gbm.clr.euclidean.nmds) # Make stressplot
-```
-
 Simple plotting  
 Rarefied table
 ```{r}
@@ -85,14 +78,6 @@ plot(otu.tab.trans.ss.nozero.bray.nmds, display = "sites", type = "n")
 points(otu.tab.trans.ss.nozero.bray.nmds, display = "sites", col = "red", pch = 19)
 text(otu.tab.trans.ss.nozero.bray.nmds, display = "sites")
 ```
-
-<!-- clr table -->
-<!-- ```{r} -->
-
-<!-- plot(otu.tab.simple.gbm.clr.euclidean.nmds, display = "sites", type = "n") -->
-<!-- points(otu.tab.simple.gbm.clr.euclidean.nmds, display = "sites", col = "red", pch = 19) -->
-<!-- text(otu.tab.simple.gbm.clr.euclidean.nmds, display = "sites") -->
-<!-- ``` -->
 
 ### Let's make nicer plots
 We get the seasons for samples

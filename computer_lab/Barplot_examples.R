@@ -3,10 +3,10 @@ library(microbiome)
 library(RColorBrewer)
 
 
-otu.tab <- read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2021/main/computer_lab/data/AB332_otutab_reduc3.txt")
+otu.tab <- read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332_otutab_reduc3.txt")
 otu.tab <- column_to_rownames(otu.tab, var = "OTUNumber")
 
-tax.tab<-read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2021/main/computer_lab/data/AB332_2021_taxtab.txt", col_names=F)
+tax.tab<-read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332_2021_taxtab.txt", col_names=F)
 colnames(tax.tab) <- c("OTUname","acc","Kingdom","Supergroup","Phylum","Tax1",
                        "Tax2","Species","Id","E-val","bit","length")
 tax.tab<-column_to_rownames(tax.tab,var="OTUname")

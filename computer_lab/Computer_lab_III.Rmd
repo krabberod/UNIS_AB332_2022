@@ -11,8 +11,8 @@ output: html_notebook
 ```{r,include=FALSE}
 library(vegan)
 library(tidyverse)
-library(compositions)
-library(zCompositions)
+# library(compositions)
+# library(zCompositions)
 library(PCAtools)
 library(mixOmics)
 library(ape)
@@ -219,13 +219,13 @@ ggord(isa.clr.cca, obslab=T, addsize=0.2,xlims=c(-2.3,2.3), ylims=c(-4,3),
 Analysis of variance using distance matrices — for partitioning distance matrices among sources of variation and fitting linear models (e.g., factors, polynomial regression) to distance matrices; uses a permutation test with pseudo-F ratios.  
 **rarefied table**
 ```{r}
-adonis(otu.tab.simple.ss.nozero~ silicate+temp_25+sal_25+F_25+phosphate,
+adonis2(otu.tab.trans.ss.nozero~ silicate+temp_25+sal_25+F_25+phosphate,
        data = as.data.frame(isa.metadata.cont.zscores),
        method="bray", permutations=9999)
 ```
 
 
 Finally save!
-```{#r}
+```{r}
 save.image("AB332_lab_III.RData")
 ```

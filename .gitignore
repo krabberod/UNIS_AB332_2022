@@ -3,8 +3,11 @@
 .Rapp.history
 
 # Session Data files
-.RData
-.Rproj
+*.RData
+*.Rproj
+*nb.html
+computer_lab/*.Rproj
+Introduction_to_R/*.Rproj
 
 # User-specific files
 .Ruserdata
