@@ -11,4 +11,4 @@ There are three main script
 - [Computer lab III](Computer_lab_III.Rmd)
 
 Example scripts:
-[Barplot_examples.R](computer_lab/Barplot_examples.R) shows how you can subset data and make barplots of the Otu table. 
+[Barplot_examples.R](Barplot_examples.R) shows how you can subset data and make barplots of the Otu table. 
