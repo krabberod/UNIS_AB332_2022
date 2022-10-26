@@ -41,13 +41,13 @@ isa.metadata <- column_to_rownames(isa.metadata, var = "Sample_Name")
 ```
 Check the variables available in the metadata:
 ```{r}
-colnames(isa.metadata.simp)
+colnames(isa.metadata)
 ```
 
 
 Select the environmental variables for the same samples as we have been using for the previous labs.
 ```{r}
-isa.metadata.simp<-isa.metadata[6:30,]
+isa.metadata.simp <- isa.metadata[6:30,]
 isa.metadata.simp
 ```
 Check that the samples are correct, i.e. that the same names are in the OTU-table and the metadata:
@@ -59,21 +59,19 @@ identical(colnames(otu.tab.red),rownames(isa.metadata.simp))
 For this exercise we will use a selection of the continuous variables as metadata.  
 This line will extract 8 of the variables, based on the column names:  
 ```{r}
-isa.metadata.cont<- isa.metadata.simp %>% dplyr::select("nitrate","phosphate","silicate","N_P",
-                                                        "temp_25","sal_25","F_25",
-                                                        "chla_GFF")
+isa.metadata.cont <- isa.metadata.simp %>% dplyr::select("nitrate","phosphate","silicate","N_P","temp_25","sal_25","F_25","chla_GFF")
 ```
 
 We transform variables using z-scores to have comparable ranges of variation.
 ```{r}
-isa.metadata.cont.zscores<-scale(isa.metadata.cont, center = T, scale = T)
+isa.metadata.cont.zscores <-scale(isa.metadata.cont, center = T, scale = T)
 isa.metadata.cont.zscores[1:5,]
 ```
 
 Let's check if the environmental variables are correlated to each other.
 We Calculate correlations and p-values:
 ```{r}
-(env.corr.signif.adjust<-rcorr.adjust(as.matrix(isa.metadata.cont.zscores)))
+(env.corr.signif.adjust <- rcorr.adjust(as.matrix(isa.metadata.cont.zscores)))
 
 ```
 
@@ -81,36 +79,30 @@ The p-values are corrected for multiple inference using Holm's method (see p.adj
 More info on: https://en.wikipedia.org/wiki/Multiple_comparisons_problem
 Holm corrected values for multiple comparisons
 ```{r}
-env.corr.signif.r<-env.corr.signif.adjust$R$r
-env.corr.signif.p<-env.corr.signif.adjust$P
+env.corr.signif.r <- env.corr.signif.adjust$R$r
+env.corr.signif.p <- env.corr.signif.adjust$P
 # Edit the object to replace any "<" by "0" using the function "gsub"
-env.corr.signif.p<-gsub("<","0", env.corr.signif.p)
+env.corr.signif.p <- gsub("<","0", env.corr.signif.p)
 # We modify the object to be numeric datatype.
 # NB: the transformation is done so the matrix of p values can be read as numeric!
 env.corr.signif.p <- apply(env.corr.signif.p, 2 ,as.numeric)
-rownames(env.corr.signif.p)<-colnames(env.corr.signif.p)
+rownames(env.corr.signif.p) <- colnames(env.corr.signif.p)
 ```
 
 Plot the correlation plot:
 ```{r}
-corrplot(env.corr.signif.r , type="upper", order="hclust",
-         p.mat = env.corr.signif.p, sig.level = 0.05,insig = "pch",
-         hclust.method = c("average"), tl.cex= 0.8, tl.col="black", diag=F)
+corrplot(env.corr.signif.r , type="upper", order="hclust", p.mat = env.corr.signif.p, sig.level = 0.05,insig = "pch",hclust.method = c("average"), tl.cex= 0.8, tl.col="black", diag=F)
 ```
 ### Fitting environmental variables to ordinations
 `envfit` will fit the environmental variables to the NMDS ordination as vectors  
-First we fit the varibles to the OTU-table that was rarified:  
-**Rarefied table**
+First we fit the variables to the OTU-table that was rarified:  
 ```{r}
 
 otu.tab.trans.ss.nozero.bray.nmds.envfit <- envfit(otu.tab.trans.ss.nozero.bray.nmds, 
-                                            as.data.frame(isa.metadata.cont.zscores), 
-                                            permu=999, na.rm=T, display ="sites")
+                                            as.data.frame(isa.metadata.cont.zscores),  permu=999, na.rm=T, display ="sites")
 otu.tab.trans.ss.nozero.bray.nmds.envfit
 
 ```
-
-
 
 
 The two last columns indicate the squared correlation coefficient and the associated p-value
@@ -133,16 +125,16 @@ Can you see any difference?
 Distance-based redundancy analysis (dbRDA) is an ordination method similar to Redundancy Analysis (rda), but it allows non-Euclidean dissimilarity indices, such as Manhattan or Bray–Curtis distance.
 Selection of the most important (i.e. signficant) variables for dbRDA is done by comparing a null model to the full model and doing a stepwise selection of significant variables.
 
-Lets use the **Rarefaction table** first:
+
 Start with a model containing only species matrix and intercept:
 ```{r}
-mod0.rarefaction<-capscale(otu.tab.trans.ss.nozero.bray ~ 1, as.data.frame(isa.metadata.cont.zscores))
+mod0.rarefaction <- capscale(otu.tab.trans.ss.nozero.bray ~ 1, as.data.frame(isa.metadata.cont.zscores))
 mod0.rarefaction
 ```
 
 Now make a model including all variables from env matrix (the dot after tilde (~) means ALL!)
 ```{r}
-mod1.rarefaction<-capscale(otu.tab.trans.ss.nozero.bray ~ ., as.data.frame(isa.metadata.cont.zscores))
+mod1.rarefaction <- capscale(otu.tab.trans.ss.nozero.bray ~ ., as.data.frame(isa.metadata.cont.zscores))
 mod1.rarefaction
 ```
 > NB here you might get an error if you have missing values. Missing vaules can be dealt with in different ways depending on the situation. Sometimes it is easiest to drop the sample, sometimes you can imput the values of the missing data. The default in the capscale (na.fail) is to stop with missing values. Choices na.omit and na.exclude delete rows with missing values, but differ in representation of results. With na.omit only non-missing site scores are shown, but na.exclude gives NA for scores of missing observations.
@@ -157,7 +149,7 @@ When doing a stepwise building of models you can this either "forward" (as in th
 
 ## Plot the ordination
 In the following sections we will use `ggord` for more control of the ordination plot. ggord is a packages that makes use of ggplot2. It can take many different parameters. See `?ggord` for details.
-**rarefied table**
+
 ```{r}
 isa.rarified.db <- dbrda(formula = otu.tab.trans.ss.nozero.bray ~ silicate+temp_25+sal_25+F_25+phosphate, data = as.data.frame(isa.metadata.cont.zscores))
 
@@ -191,38 +183,39 @@ ggord(isa.rarified.db, grp_in=as.factor(isa.metadata.simp$month), xlims=c(-1.3,1
 
 ```
 
+<!-- # For those who need more:  -->
+<!-- ## Constrained Correspondence Analyses (CCA) -->
+<!-- - suitable for linear variables -->
+<!-- Selection of the most important variables -->
 
-## Constrained Correspondence Analyses (CCA)  
-Selection of the most important variables
-**rarefaction table**
-```{r}
-mod0.cca.rarefaction<-cca(otu.tab.trans.ss.nozero ~ 1, as.data.frame(isa.metadata.cont.zscores)) # model containing only species matrix and intercept
-mod1.cca.rarefaction<-cca(otu.tab.trans.ss.nozero ~ ., as.data.frame(isa.metadata.cont.zscores)) # # model including all variables from env matrix (the dot after tilde (~) means ALL!)
-ordistep(mod0.cca.rarefaction, scope = formula(mod1.cca.rarefaction), perm.max = 1000, direction="forward")
-```
+<!-- ```{r} -->
+<!-- mod0.cca.rarefaction <- cca(otu.tab.trans.ss.nozero ~ 1, as.data.frame(isa.metadata.cont.zscores)) # model containing only species matrix and intercept -->
+<!-- mod1.cca.rarefaction <- cca(otu.tab.trans.ss.nozero ~ ., as.data.frame(isa.metadata.cont.zscores)) # # model including all variables from env matrix (the dot after tilde (~) means ALL!) -->
+<!-- ordistep(mod0.cca.rarefaction, scope = formula(mod1.cca.rarefaction), perm.max = 1000, direction="forward") -->
+<!-- ``` -->
 
-Replace the variables in the formula below with the significant variables from the selection procedure.
-```{r}
-isa.clr.cca<-cca(formula = otu.tab.trans.ss.nozero ~ chla_GFF+ silicate+ N_P, data = as.data.frame(isa.metadata.cont.zscores))
+<!-- Replace the variables in the formula below with the significant variables from the selection procedure. -->
+<!-- ```{r} -->
+<!-- isa.clr.cca<-cca(formula = otu.tab.trans.ss.nozero ~ chla_GFF+ silicate+ N_P, data = as.data.frame(isa.metadata.cont.zscores)) -->
 
-stats::screeplot(isa.clr.cca)
-```
-PLotting with some examples of parameters that can be used to control the plot. Use `?ggord` if you want to learn more.
+<!-- stats::screeplot(isa.clr.cca) -->
+<!-- ``` -->
+<!-- PLotting with some examples of parameters that can be used to control the plot. Use `?ggord` if you want to learn more. -->
 
-```{r}
-ggord(isa.clr.cca, obslab=T, addsize=0.2,xlims=c(-2.3,2.3), ylims=c(-4,3),
-      addcol="#2ca25f",txt=3, ext=1.2, labcol="#762a83",veccol="#762a83", size=2.6,alpha=0.7)
-```
+<!-- ```{r} -->
+<!-- ggord(isa.clr.cca, obslab=T, addsize=0.2,xlims=c(-2.3,2.3), ylims=c(-4,3), -->
+<!--       addcol="#2ca25f",txt=3, ext=1.2, labcol="#762a83",veccol="#762a83", size=2.6,alpha=0.7) -->
+<!-- ``` -->
 
 
-# Permanova
-Analysis of variance using distance matrices — for partitioning distance matrices among sources of variation and fitting linear models (e.g., factors, polynomial regression) to distance matrices; uses a permutation test with pseudo-F ratios.  
-**rarefied table**
-```{r}
-adonis2(otu.tab.trans.ss.nozero~ silicate+temp_25+sal_25+F_25+phosphate,
-       data = as.data.frame(isa.metadata.cont.zscores),
-       method="bray", permutations=9999)
-```
+<!-- # Permanova -->
+<!-- Analysis of variance using distance matrices — for partitioning distance matrices among sources of variation and fitting linear models (e.g., factors, polynomial regression) to distance matrices; uses a permutation test with pseudo-F ratios.   -->
+
+<!-- ```{r} -->
+<!-- adonis2(otu.tab.trans.ss.nozero~ silicate+temp_25+sal_25+F_25+phosphate, -->
+<!--        data = as.data.frame(isa.metadata.cont.zscores), -->
+<!--        method="bray", permutations=9999) -->
+<!-- ``` -->
 
 
 Finally save!

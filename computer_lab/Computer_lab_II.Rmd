@@ -126,7 +126,7 @@ We'll calculate bootstrap support values (0: bad - 100: perfect)
 This allows us to know how well supported is the branching pattern
 ```{r}
 otu.tab.trans.ss.nozero.bray.upgma.boot <- recluster.boot(otu.tab.trans.ss.nozero.bray.upgma$cons, otu.tab.trans.ss.nozero, tr = 100, p = 0.5, method = "average", boot = 1000, level = 1)
-recluster.plot(otu.tab.trans.ss.nozero.bray.upgma$cons, otu.tab.trans.ss.nozero.bray.upgma.boot) # We add bootstrap values to the branching pattern
+recluster.plot(otu.tab.trans.ss.nozero.bray.upgma$cons, otu.tab.trans.ss.nozero.bray.upgma.boot, direction="left") # We add bootstrap values to the branching pattern
 ```
 
 

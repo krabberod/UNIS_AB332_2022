@@ -76,7 +76,7 @@ This way your numbers will differ from the pdf, and you can also see the effect 
 otu.tab.red <- otu.tab[, 6:30]
 ```
 
-The data needs to be transposed since this is how Vegan likes it (i.e. Vegan prefers OTUs as rows, and Samples as columns).
+The data needs to be transposed since this is how Vegan likes it (i.e. Vegan prefers OTUs as columns, and Samples as rows).
 ```{r}
 otu.tab.trans <- t(otu.tab.red)
 otu.tab.trans[1:5, 1:5]
