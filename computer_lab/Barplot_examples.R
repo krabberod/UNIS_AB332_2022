@@ -3,15 +3,20 @@ library(microbiome)
 library(RColorBrewer)
 
 
-otu.tab <- read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332_otutab_reduc3.txt")
+otu.tab <- read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332_otutab_reduc3.txt") %>%
+  as.data.frame()
 otu.tab <- column_to_rownames(otu.tab, var = "OTUNumber")
 
-tax.tab<-read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332_2021_taxtab.txt", col_names=F)
-colnames(tax.tab) <- c("OTUname","acc","Kingdom","Supergroup","Phylum","Tax1",
-                       "Tax2","Species","Id","E-val","bit","length")
+tax.tab<-read_tsv("https://raw.githubusercontent.com/krabberod/UNIS_AB332_2022/main/computer_lab/data/AB332_2021_taxtab.txt", col_names=T) %>% na.omit()
+
+#colnames(tax.tab) <- c("OTUname","acc","Kingdom","Supergroup","Phylum","Tax1",
+#                       "Tax2","Species","Id","E-val","bit","length")
+
 tax.tab<-column_to_rownames(tax.tab,var="OTUname")
-OTU<-otu_table(otu.tab,taxa_are_rows=T)
 TAX<-tax.tab %>% dplyr::select(Kingdom:Species) %>% as.matrix %>% tax_table()
+OTU<-otu_table(otu.tab,taxa_are_rows=T)
+
+merged_table <- merge(tax.tab,otu.tab, by=0)
 
 isa.phyloseq<-phyloseq(OTU,TAX)
 
@@ -58,3 +63,41 @@ plot_bar(isa.micromonas,fill = "Species") +
   ylab("Relative Abundance\n") +
   ggtitle("Micromonas")
 
+ntax <- phyloseq_ntaxa_by_tax(isa.phyloseq,TaxRank = "Supergroup",relative = F)
+
+ggplot(ntax, aes(fill=Supergroup, y=N.OTU, x=Sample)) + 
+  geom_bar(position="dodge", stat="identity")
+
+display.brewer.all(colorblindFriendly=TRUE)
+ggplot(ntax, aes(fill=Supergroup, y=N.OTU, x=Sample)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_manual(values = sample(colorRampPalette(brewer.pal(8,"Accent"))(39)),name="Supergroup")
+
+ntax$Supergroup %>% unique()
+
+
+ntax$Supergroup <- factor(ntax$Supergroup,c("Centroheliozoa","Choanoflagellates","Cryptophyta",
+  "Haptophyceae[prymnesiophytes]","Katablepharidophyta","NULL","Picozoas","Rhizaria",
+   "Rhodophyta","stramenopiles","Telonemia","Viridiplantae_Chlorophyta","Apusozoa","Alveolata"))
+
+
+ggplot(ntax, aes(fill=Supergroup, y=N.OTU, x=Sample)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(11,"Paired"))(39),name="Supergroup") +
+  theme_bw(base_size = 8)+
+  theme(legend.key.size = unit(0.2, "cm")) 
+
+
+ggplot(ntax, aes(fill=Supergroup, y=N.OTU, x=Sample)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(11,"Paired"))(39),name="Supergroup") +
+  theme_bw(base_size = 8)+
+  theme(legend.key.size = unit(0.2, "cm")) 
+
+
+
+ggplot(merged_table, aes(fill=Supergroup, y=N.OTU, x=Sample)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(11,"Paired"))(39),name="Supergroup") +
+  theme_bw(base_size = 8)+
+  theme(legend.key.size = unit(0.2, "cm")) 
